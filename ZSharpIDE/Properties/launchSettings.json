@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ZSharpIDE (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ZSharpIDE (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
