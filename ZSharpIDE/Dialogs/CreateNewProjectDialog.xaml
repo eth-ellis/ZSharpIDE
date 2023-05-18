@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="ZSharpIDE.Dialogs.CreateNewProjectDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:DefaultBindMode="OneWay"
+    mc:Ignorable="d"
+    Title="Create new project"
+    CloseButtonText="Cancel"
+    PrimaryButtonText="Create"
+    PrimaryButtonCommand="{x:Bind DialogModel.CreateNewProjectCommand}"
+    DefaultButton="Primary">
+
+    <Grid
+        Margin="0,20">
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition
+                Width="*" />
+            <ColumnDefinition
+                Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel
+            Grid.Column="0"
+            Width="400">
+
+            <TextBlock
+                Text="Select template"
+                Style="{ThemeResource BodyStrongTextBlockStyle}" />
+
+            <RadioButtons>
+
+                <RadioButton
+                    Content="Console" />
+
+                <RadioButton
+                    Content="Windows Forms" />
+
+            </RadioButtons>
+            
+        </StackPanel>
+
+        <StackPanel
+            Grid.Column="1"
+            Spacing="20"
+            Width="400">
+
+            <TextBlock
+                Text="Project name"
+                Style="{ThemeResource BodyStrongTextBlockStyle}" />
+
+            <TextBox
+                Text="{x:Bind DialogModel.ProjectName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock
+                Text="Project directory"
+                Style="{ThemeResource BodyStrongTextBlockStyle}" />
+
+            <Grid
+                ColumnSpacing="10">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition
+                        Width="*" />
+                    <ColumnDefinition
+                        Width="auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox
+                    Grid.Column="0"
+                    Text="{x:Bind DialogModel.ProjectPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <Button
+                    Grid.Column="1"
+                    Content="..."
+                    Command="{x:Bind DialogModel.OpenFolderPickerCommand}" />
+
+            </Grid>
+
+            <TextBlock
+                Text="{x:Bind DialogModel.ProjectLocation}"
+                Style="{ThemeResource CaptionTextBlockStyle}"
+                TextWrapping="Wrap" />
+
+            <TextBlock
+                Text="Options"
+                Style="{ThemeResource BodyStrongTextBlockStyle}" />
+
+            <CheckBox
+                Content="Include Git Ignore"
+                IsChecked="{x:Bind DialogModel.IncludeGitIgnore, Mode=TwoWay}" />
+
+            <CheckBox
+                Content="Include Readme"
+                IsChecked="{x:Bind DialogModel.IncludeReadme, Mode=TwoWay}" />
+
+            <CheckBox
+                Content="Include MIT Licence"
+                IsChecked="{x:Bind DialogModel.IncludeLicence, Mode=TwoWay}" />
+
+        </StackPanel>
+
+    </Grid>
+
+</ContentDialog>

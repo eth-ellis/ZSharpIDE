@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using ZSharpIDE.Views;
 
 namespace ZSharpIDE
 {
@@ -7,6 +8,10 @@ namespace ZSharpIDE
         public MainWindow()
         {
             this.InitializeComponent();
+
+            this.Title = "ZSharpIDE";
+
+            this.rootFrame.Navigate(typeof(HomeView));
         }
     }
 }
