@@ -91,7 +91,19 @@
                 Text="Convert existing c# project"
                 FontSize="{StaticResource BodyTextBlockFontSize}"
                 Foreground="DeepSkyBlue"
-                Margin="0,20,0,0" />
+                Margin="0,20,0,0">
+                
+                <interactivity:Interaction.Behaviors>
+
+                    <interactions:EventTriggerBehavior
+                        EventName="Tapped">
+                        <interactions:InvokeCommandAction
+                            Command="{x:Bind ViewModel.ConvertExistingCSharpProjectCommand}" />
+                    </interactions:EventTriggerBehavior>
+
+                </interactivity:Interaction.Behaviors>
+
+            </TextBlock>
 
             <TextBlock
                 Text="Recent"
