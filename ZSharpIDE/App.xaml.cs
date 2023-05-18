@@ -1,4 +1,9 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using System;
+using ZSharpIDE.DialogModels;
+using ZSharpIDE.Services;
+using ZSharpIDE.ViewModels;
 
 namespace ZSharpIDE
 {
@@ -7,7 +12,15 @@ namespace ZSharpIDE
     /// </summary>
     public partial class App : Application
     {
-        private Window mainWindow;
+        /// <summary>
+        /// The Main Window.
+        /// </summary>
+        public Window MainWindow { get; private set; }
+
+        /// <summary>
+        /// The DI Container.
+        /// </summary>
+        public IServiceProvider Container { get; private set; }
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -16,6 +29,8 @@ namespace ZSharpIDE
         public App()
         {
             this.InitializeComponent();
+
+            Current.RequestedTheme = ApplicationTheme.Dark;
         }
 
         /// <summary>
@@ -24,8 +39,39 @@ namespace ZSharpIDE
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            this.mainWindow = new MainWindow();
-            this.mainWindow.Activate();
+            this.Container = this.RegisterServices();
+
+            this.MainWindow = new MainWindow();
+            this.MainWindow.Activate();
+        }
+
+        /// <summary>
+        /// Initializes the DI container.
+        /// </summary>
+        /// <returns>An instance implementing IServiceProvider.</returns>
+        private IServiceProvider RegisterServices()
+        {
+            var services = new ServiceCollection();
+
+            // View Models
+            services.AddTransient<HomeViewModel>();
+            services.AddTransient<CodeViewModel>();
+
+            // Services
+            services.AddSingleton<NavigationService>();
+            services.AddSingleton<SettingsService>();
+            services.AddSingleton<StateService>();
+            services.AddSingleton<AppService>();
+
+            // Dialog Models
+            services.AddTransient<RenameFileDialogModel>();
+            services.AddTransient<RenameDirectoryDialogModel>();
+            services.AddTransient<CreateNewFileDialogModel>();
+            services.AddTransient<CreateNewDirectoryDialogModel>();
+            services.AddTransient<CreateNewProjectDialogModel>();
+            services.AddTransient<UnsavedContentDialogModel>();
+
+            return services.BuildServiceProvider();
         }
     }
 }
