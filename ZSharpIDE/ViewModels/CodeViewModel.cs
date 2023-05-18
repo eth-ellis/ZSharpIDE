@@ -371,13 +371,13 @@ namespace ZSharpIDE.ViewModels
 
             foreach (var zsFile in zsFiles)
             {
-                string newFilePath = Path.ChangeExtension(zsFile, ".cs");
+                var newFilePath = Path.ChangeExtension(zsFile, ".cs");
                 File.Move(zsFile, newFilePath);
             }
 
             foreach (var zsprojFile in zsprojFiles)
             {
-                string newFilePath = Path.ChangeExtension(zsprojFile, ".csproj");
+                var newFilePath = Path.ChangeExtension(zsprojFile, ".csproj");
                 File.Move(zsprojFile, newFilePath);
             }
 

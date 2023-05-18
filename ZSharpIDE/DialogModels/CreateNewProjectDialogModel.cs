@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
+using ZSharpIDE.Enums;
 using ZSharpIDE.Extensions;
 using ZSharpIDE.Models;
 using ZSharpIDE.Services;
@@ -22,6 +23,22 @@ namespace ZSharpIDE.DialogModels
         private readonly SettingsService settingsService = (Application.Current as App).Container.GetService<SettingsService>();
         private readonly StateService stateService = (Application.Current as App).Container.GetService<StateService>();
         private readonly AppService appService = (Application.Current as App).Container.GetService<AppService>();
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SelectedTemplate))]
+        private int selectedTemplateIndex = 0;
+
+        public Template SelectedTemplate
+        {
+            get
+            {
+                return (Template)this.SelectedTemplateIndex;
+            }
+            set
+            {
+                this.SelectedTemplateIndex = (int)value;
+            }
+        }
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(ProjectLocation))]
@@ -68,13 +85,20 @@ namespace ZSharpIDE.DialogModels
         [RelayCommand]
         private void CreateNewProject()
         {
+            var template = this.SelectedTemplate switch
+            {
+                Template.Console => "Console",
+                Template.WindowsForms => "Windows Forms",
+                _ => "Console",
+            };
+
             var projectDirectory = Path.Combine(this.ProjectPath, this.ProjectName);
 
             Directory.CreateDirectory(projectDirectory);
 
             var executableFilePath = Assembly.GetEntryAssembly().Location;
             var executableDirectory = Path.GetDirectoryName(executableFilePath);
-            var templateDirectory = Path.Combine(executableDirectory, "Resources", "Templates", "Windows Forms"); // TODO - Allow selection of template
+            var templateDirectory = Path.Combine(executableDirectory, "Resources", "Templates", template);
             var projectFilePath = Path.Combine(projectDirectory, $"{this.ProjectName}.zsproj");
             var codeFilePath = Path.Combine(projectDirectory, $"{this.ProjectName}.zs");
 

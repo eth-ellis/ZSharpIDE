@@ -31,7 +31,8 @@
                 Text="Select template"
                 Style="{ThemeResource BodyStrongTextBlockStyle}" />
 
-            <RadioButtons>
+            <RadioButtons
+                SelectedIndex="{x:Bind DialogModel.SelectedTemplateIndex, Mode=TwoWay}">
 
                 <RadioButton
                     Content="Console" />
