@@ -24,6 +24,7 @@
     <None Remove="Dialogs\CreateNewProjectDialog.xaml" />
     <None Remove="Dialogs\RenameDirectoryDialog.xaml" />
     <None Remove="Dialogs\RenameFileDialog.xaml" />
+    <None Remove="Dialogs\SettingsDialog.xaml" />
     <None Remove="Dialogs\UnsavedContentDialog.xaml" />
     <None Remove="Resources\Template.zs" />
     <None Remove="Resources\Templates\Console\.gitignore" />
@@ -84,6 +85,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Update="Dialogs\RenameDirectoryDialog.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Dialogs\SettingsDialog.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

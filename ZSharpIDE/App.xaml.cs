@@ -70,6 +70,7 @@ namespace ZSharpIDE
             services.AddTransient<CreateNewDirectoryDialogModel>();
             services.AddTransient<CreateNewProjectDialogModel>();
             services.AddTransient<UnsavedContentDialogModel>();
+            services.AddTransient<SettingsDialogModel>();
 
             return services.BuildServiceProvider();
         }

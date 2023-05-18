@@ -322,27 +322,49 @@
 
             </StackPanel>
 
-            <Button
+            <StackPanel
                 Grid.Row="0"
                 Grid.Column="1"
-                Command="{x:Bind ViewModel.OpenGitConsoleCommand}"
-                ToolTipService.ToolTip="Open the Git console"
-                ToolTipService.Placement="Mouse"
-                Margin="0,0,10,0">
+                Orientation="Horizontal">
 
-                <StackPanel
-                    Orientation="Horizontal"
-                    Spacing="10">
+                <Button
+                    Command="{x:Bind ViewModel.OpenGitConsoleCommand}"
+                    ToolTipService.ToolTip="Open the Git console"
+                    ToolTipService.Placement="Mouse"
+                    Margin="0,0,10,0">
 
-                    <SymbolIcon
-                        Symbol="NewWindow" />
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="10">
 
-                    <TextBlock
-                        Text="Git Console" />
+                        <SymbolIcon
+                            Symbol="NewWindow" />
 
-                </StackPanel>
+                        <TextBlock
+                            Text="Git Console" />
 
-            </Button>
+                    </StackPanel>
+
+                </Button>
+
+                <Button
+                    Command="{x:Bind ViewModel.OpenSettingsCommand}"
+                    ToolTipService.ToolTip="Open settings"
+                    ToolTipService.Placement="Mouse"
+                    Margin="0,0,10,0">
+
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="10">
+
+                        <SymbolIcon
+                            Symbol="Setting" />
+
+                    </StackPanel>
+
+                </Button>
+
+            </StackPanel>
 
             <Line
                 Grid.Row="1"

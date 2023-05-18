@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json;
 using Windows.Storage;
 using ZSharpIDE.Models;
@@ -9,25 +8,21 @@ namespace ZSharpIDE.Services
     public sealed class SettingsService
     {
         private const string RecentProjectsKey = nameof(RecentProjectsKey);
+        private const string SpacesPerTabKey = nameof(SpacesPerTabKey);
 
         /// <summary>
         /// Get or set the recent projects list.
         /// </summary>
-        /// <remarks>
-        /// Value 1 is the project name. Value 2 is the project file path.
-        /// </remarks>
         public List<RecentProject> RecentProjects
         {
             get
             {
                 var localSettings = ApplicationData.Current.LocalSettings;
                 
-                if (localSettings.Values.TryGetValue(RecentProjectsKey, out var serialisedSetting))
+                if (localSettings.Values.TryGetValue(RecentProjectsKey, out var serialisedSettingValue) &&
+                    serialisedSettingValue is string serialisedSetting)
                 {
-                    if (serialisedSetting is string)
-                    {
-                        return JsonSerializer.Deserialize<List<RecentProject>>(serialisedSetting as string);
-                    }
+                    return JsonSerializer.Deserialize<List<RecentProject>>(serialisedSetting);
                 }
 
                 return new List<RecentProject>();
@@ -39,6 +34,32 @@ namespace ZSharpIDE.Services
                 var serialisedSetting = JsonSerializer.Serialize(value);
 
                 localSettings.Values[RecentProjectsKey] = serialisedSetting;
+            }
+        }
+
+        /// <summary>
+        /// Get or set the spaces per tab preference.
+        /// </summary>
+        public int SpacesPerTab
+        {
+            get
+            {
+                var localSettings = ApplicationData.Current.LocalSettings;
+
+                if (localSettings.Values.TryGetValue(SpacesPerTabKey, out var spacesPerTabValue) &&
+                    spacesPerTabValue is int spacesPerTab)
+                {
+                    return spacesPerTab;
+
+                }
+
+                return 4;
+            }
+            set
+            {
+                var localSettings = ApplicationData.Current.LocalSettings;
+
+                localSettings.Values[SpacesPerTabKey] = value;
             }
         }
     }

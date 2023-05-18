@@ -302,6 +302,12 @@ namespace ZSharpIDE.ViewModels
             }
         }
 
+        [RelayCommand]
+        private async Task OpenSettings()
+        {
+            await new SettingsDialog().ShowAsync();
+        }
+
         #region Program Operation
 
         [RelayCommand]

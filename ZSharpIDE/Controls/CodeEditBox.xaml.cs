@@ -8,13 +8,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Windows.System;
-using ZSharpIDE.Extensions;
 using ZSharpIDE.Services;
 
 namespace ZSharpIDE.Controls
 {
     public sealed partial class CodeEditBox : UserControl
     {
+        private readonly SettingsService settingsService = (Application.Current as App).Container.GetService<SettingsService>();
         private readonly StateService stateService = (Application.Current as App).Container.GetService<StateService>();
 
         public static readonly DependencyProperty PlainTextProperty = DependencyProperty.Register(nameof(PlainText), typeof(string), typeof(CodeEditBox), null);
@@ -34,17 +34,19 @@ namespace ZSharpIDE.Controls
         {
             this.RichEditBox.Document.GetText(TextGetOptions.None, out var text);
 
-            int caretPosition = this.RichEditBox.Document.Selection.StartPosition;
+            var caretPosition = this.RichEditBox.Document.Selection.StartPosition;
+
+            var spacesPerTab = this.settingsService.SpacesPerTab;
 
             if (e.Key == VirtualKey.Tab)
             {
-                var tab = new string(' ', Constants.SpacesPerTab);
+                var tab = new string(' ', spacesPerTab);
 
                 var parsed = text.Insert(caretPosition, tab);
 
                 this.RichEditBox.Document.SetText(TextSetOptions.None, parsed);
 
-                var newCaretPosition = caretPosition + Constants.SpacesPerTab;
+                var newCaretPosition = caretPosition + spacesPerTab;
 
                 this.RichEditBox.Document.Selection.SetRange(newCaretPosition, newCaretPosition);
 
@@ -58,13 +60,13 @@ namespace ZSharpIDE.Controls
                     return;
                 }
 
-                if (caretPosition >= Constants.SpacesPerTab && text.Substring(caretPosition - Constants.SpacesPerTab, Constants.SpacesPerTab).All(c => c == ' '))
+                if (caretPosition >= spacesPerTab && text.Substring(caretPosition - spacesPerTab, spacesPerTab).All(c => c == ' '))
                 {
-                    var parsed = text.Remove(caretPosition - Constants.SpacesPerTab, Constants.SpacesPerTab);
+                    var parsed = text.Remove(caretPosition - spacesPerTab, spacesPerTab);
 
                     this.RichEditBox.Document.SetText(TextSetOptions.None, parsed);
 
-                    var newCaretPosition = caretPosition - Constants.SpacesPerTab;
+                    var newCaretPosition = caretPosition - spacesPerTab;
 
                     this.RichEditBox.Document.Selection.SetRange(newCaretPosition, newCaretPosition);
 
