@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -100,6 +101,72 @@ namespace ZSharpIDE.ViewModels
             recentProjects.Remove(recentProject);
 
             OnPropertyChanged(nameof(RecentProjects));
+        }
+
+        [RelayCommand]
+        private async Task ConvertExistingCSharpProject()
+        {
+            var openPicker = new FileOpenPicker();
+
+            var windowHandle = WindowNative.GetWindowHandle(this.appService.MainWindow);
+
+            InitializeWithWindow.Initialize(openPicker, windowHandle);
+
+            openPicker.ViewMode = PickerViewMode.List;
+            openPicker.FileTypeFilter.Add(".csproj");
+            openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+
+            var file = await openPicker.PickSingleFileAsync();
+
+            if (file != null)
+            {
+                var csharpfileInfo = new FileInfo(file.Path);
+
+                var zsharpFileInfo = this.ConvertCSharpProject(csharpfileInfo);
+
+                if (zsharpFileInfo is null)
+                {
+                    return;
+                }
+
+                this.stateService.ProjectFile = zsharpFileInfo;
+                this.stateService.ProjectDirectory = zsharpFileInfo.Directory;
+
+                var recentProjects = this.settingsService.RecentProjects;
+
+                if (recentProjects.None(project => Path.GetFileNameWithoutExtension(zsharpFileInfo.Name) == project.ProjectName && zsharpFileInfo.FullName == project.ProjectPath))
+                {
+                    recentProjects.Insert(0, new RecentProject(Path.GetFileNameWithoutExtension(zsharpFileInfo.Name), zsharpFileInfo.FullName));
+                }
+
+                this.settingsService.RecentProjects = recentProjects;
+
+                this.navigationService.Navigate(typeof(CodeView));
+            }
+        }
+
+        public FileInfo ConvertCSharpProject(FileInfo fileInfo)
+        {
+            string[] csFiles = Directory.GetFiles(fileInfo.Directory.FullName, "*.cs", SearchOption.AllDirectories);
+            string[] csprojFiles = Directory.GetFiles(fileInfo.Directory.FullName, "*.csproj", SearchOption.AllDirectories);
+
+            foreach (var csFile in csFiles)
+            {
+                string newFilePath = Path.ChangeExtension(csFile, ".zs");
+                File.Move(csFile, newFilePath);
+            }
+
+            foreach (var csprojFile in csprojFiles)
+            {
+                string newFilePath = Path.ChangeExtension(csprojFile, ".zsproj");
+                File.Move(csprojFile, newFilePath);
+            }
+
+            var zsprojFilePath = Directory
+                .EnumerateFiles(fileInfo.Directory.FullName)
+                .FirstOrDefault(filePath => Path.GetExtension(filePath) == ".zsproj");
+
+            return new FileInfo(zsprojFilePath);
         }
     }
 }

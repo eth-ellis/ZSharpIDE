@@ -357,19 +357,22 @@ namespace ZSharpIDE.ViewModels
 
             foreach (var file in copyFiles)
             {
-                var filePath = Path.Combine(tempDirectory, file.Name);
+                File.Copy(file.FullName, Path.Combine(tempDirectory, file.Name));
+            }
 
-                if (file.Extension == ".zsproj")
-                {
-                    filePath = filePath.Replace(".zsproj", ".csproj");
-                }
+            string[] zsFiles = Directory.GetFiles(tempDirectory, "*.zs", System.IO.SearchOption.AllDirectories);
+            string[] zsprojFiles = Directory.GetFiles(tempDirectory, "*.zsproj", System.IO.SearchOption.AllDirectories);
 
-                if (file.Extension == ".zs")
-                {
-                    filePath = filePath.Replace(".zs", ".cs");
-                }
+            foreach (var zsFile in zsFiles)
+            {
+                string newFilePath = Path.ChangeExtension(zsFile, ".cs");
+                File.Move(zsFile, newFilePath);
+            }
 
-                File.Copy(file.FullName, filePath);
+            foreach (var zsprojFile in zsprojFiles)
+            {
+                string newFilePath = Path.ChangeExtension(zsprojFile, ".csproj");
+                File.Move(zsprojFile, newFilePath);
             }
 
             var csprojFilePath = Path.Combine(tempDirectory, $"{this.stateService.ProjectName}.csproj");
@@ -467,21 +470,19 @@ namespace ZSharpIDE.ViewModels
 
                 if (errorMatch.Success)
                 {
-                    string errorCode = errorMatch.Groups[4].Value;
-                    string errorMessage = errorMatch.Groups[5].Value.Trim();
-                    string filename = errorMatch.Groups[1].Value;
+                    string code = errorMatch.Groups[4].Value;
+                    string description = errorMatch.Groups[5].Value.Trim();
+                    string filePath = errorMatch.Groups[1].Value;
                     int line = int.Parse(errorMatch.Groups[2].Value);
-                    int column = int.Parse(errorMatch.Groups[3].Value);
 
-                    var error = new Error(Severity.Error, errorCode, errorMessage, filename, line, column);
+                    var error = new Error(Severity.Error, code, description, filePath, line);
 
                     if (this.ErrorLines.None(line =>
                         line.Severity == error.Severity &&
-                        line.ErrorCode == error.ErrorCode &&
-                        line.ErrorMessage == error.ErrorMessage &&
-                        line.FileName == error.FileName &&
-                        line.Line == error.Line &&
-                        line.Column == error.Column))
+                        line.Code == error.Code &&
+                        line.Description == error.Description &&
+                        line.FilePath == error.FilePath &&
+                        line.Line == error.Line))
                     {
                         this.ErrorLines.Add(error);
                     }
@@ -493,21 +494,19 @@ namespace ZSharpIDE.ViewModels
 
                 if (warningMatch.Success)
                 {
-                    string warningCode = warningMatch.Groups[4].Value;
-                    string warningMessage = warningMatch.Groups[5].Value.Trim();
-                    string filename = warningMatch.Groups[1].Value;
+                    string code = warningMatch.Groups[4].Value;
+                    string description = warningMatch.Groups[5].Value.Trim();
+                    string filePath = warningMatch.Groups[1].Value;
                     int line = int.Parse(warningMatch.Groups[2].Value);
-                    int column = int.Parse(warningMatch.Groups[3].Value);
 
-                    var error = new Error(Severity.Warning, warningCode, warningMessage, filename, line, column);
+                    var error = new Error(Severity.Warning, code, description, filePath, line);
                     
                     if (this.ErrorLines.None(line =>
                         line.Severity == error.Severity &&
-                        line.ErrorCode == error.ErrorCode &&
-                        line.ErrorMessage == error.ErrorMessage &&
-                        line.FileName == error.FileName &&
-                        line.Line == error.Line &&
-                        line.Column == error.Column))
+                        line.Code == error.Code &&
+                        line.Description == error.Description &&
+                        line.FilePath == error.FilePath &&
+                        line.Line == error.Line))
                     {
                         this.ErrorLines.Add(error);
                     }

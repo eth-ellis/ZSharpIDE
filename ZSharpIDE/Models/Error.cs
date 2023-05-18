@@ -6,24 +6,21 @@ namespace ZSharpIDE.Models
     {
         public Severity Severity { get; set; }
 
-        public string ErrorCode { get; set; }
+        public string Code { get; set; }
 
-        public string ErrorMessage { get; set; }
+        public string Description { get; set; }
 
-        public string FileName { get; set; }
+        public string FilePath { get; set; }
 
         public int Line { get; set; }
 
-        public int Column { get; set; }
-
-        public Error(Severity severity, string errorCode, string errorMessage, string fileName, int line, int column)
+        public Error(Severity severity, string code, string description, string filePath, int line)
         {
             this.Severity = severity;
-            this.ErrorCode = errorCode;
-            this.ErrorMessage = errorMessage;
-            this.FileName = fileName;
+            this.Code = code;
+            this.Description = description;
+            this.FilePath = filePath;
             this.Line = line;
-            this.Column = column;
         }
     }
 }
