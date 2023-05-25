@@ -4,10 +4,14 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Windows.System;
+using Windows.UI.Core;
 using ZSharpIDE.Services;
 
 namespace ZSharpIDE.Controls
@@ -16,6 +20,7 @@ namespace ZSharpIDE.Controls
     {
         private readonly SettingsService settingsService = (Application.Current as App).Container.GetService<SettingsService>();
         private readonly StateService stateService = (Application.Current as App).Container.GetService<StateService>();
+        private readonly AppService appService = (Application.Current as App).Container.GetService<AppService>();
 
         public static readonly DependencyProperty PlainTextProperty = DependencyProperty.Register(nameof(PlainText), typeof(string), typeof(CodeEditBox), null);
 
@@ -25,12 +30,22 @@ namespace ZSharpIDE.Controls
             set { SetValue(PlainTextProperty, value); }
         }
 
+        public static readonly DependencyProperty CodeFontSizeProperty = DependencyProperty.Register(nameof(CodeFontSize), typeof(int), typeof(CodeEditBox), null);
+
+        public int CodeFontSize
+        {
+            get { return (int)GetValue(CodeFontSizeProperty); }
+            set { SetValue(CodeFontSizeProperty, value); }
+        }
+
         public CodeEditBox()
         {
             this.InitializeComponent();
+
+            this.CodeFontSize = this.stateService.CurrentCodeFontSize;
         }
 
-        private void CodeEditor_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        private void RichEditBox_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
         {
             this.RichEditBox.Document.GetText(TextGetOptions.None, out var text);
 
@@ -87,7 +102,136 @@ namespace ZSharpIDE.Controls
             }
         }
 
-        private void CodeEditor_TextChanging(RichEditBox sender, RichEditBoxTextChangingEventArgs args)
+        private async void RichEditBox_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            if (e.KeyModifiers.HasFlag(VirtualKeyModifiers.Control))
+            {
+                var delta = e.GetCurrentPoint(null).Properties.MouseWheelDelta;
+
+                if (delta > 0)
+                {
+                    if (this.CodeFontSize < 40 )
+                    {
+                        this.CodeFontSize++;
+                    }
+                }
+                else if (delta < 0)
+                {
+                    if (this.CodeFontSize > 5)
+                    {
+                        this.CodeFontSize--;
+                    }
+                }
+
+                this.stateService.CurrentCodeFontSize = this.CodeFontSize;
+
+                await this.UpdateLineNumbers(true);
+
+                e.Handled = true;
+            }
+        }
+
+        private async void RichEditBox_SelectionChanging(RichEditBox sender, RichEditBoxSelectionChangingEventArgs args)
+        {
+            await this.UpdateLineNumbers();
+        }
+
+        private async Task UpdateLineNumbers(bool invalidate = false)
+        {
+            await Task.Delay(10);
+
+            if (invalidate)
+            {
+                this.LineNumbersBox.Children.Clear();
+            }
+
+            this.RichEditBox.Document.GetText(TextGetOptions.None, out var text);
+
+            var cursorPosition = this.RichEditBox.Document.Selection.EndPosition;
+
+            var newlineMatches = Regex.Matches(text, @"\r").ToList();
+
+            var difference = newlineMatches.Count - this.LineNumbersBox.Children.Count;
+
+            while (difference != 0)
+            {
+                if (difference > 0)
+                {
+                    var previousLineNumber = this.GetPreviousLineNumber();
+
+                    var range = this.RichEditBox.Document.GetRange(newlineMatches[previousLineNumber].Index, newlineMatches[previousLineNumber].Length);
+
+                    range.GetPoint(HorizontalCharacterAlignment.Left, VerticalCharacterAlignment.Top, PointOptions.ClientCoordinates, out var point);
+
+                    var stackPanel = this.CreateLineNumberElement(previousLineNumber + 1, point.Y);
+
+                    this.LineNumbersBox.Children.Add(stackPanel);
+                }
+                else
+                {
+                    this.LineNumbersBox.Children.RemoveAt(this.LineNumbersBox.Children.Count - 1);
+                }
+
+                difference = newlineMatches.Count - this.LineNumbersBox.Children.Count;
+            }
+
+            // TODO - can this be improved?
+            foreach (var stackPanel in this.LineNumbersBox.Children.OfType<StackPanel>().ToList())
+            {
+                var textBlock = stackPanel.Children.FirstOrDefault() as TextBlock;
+
+                textBlock.Foreground = new SolidColorBrush(Colors.Gray);
+            }
+
+
+            // TODO - This doesn't work properly
+            var currentLineIndex = newlineMatches.FindIndex(match =>
+            {
+                return cursorPosition >= match.Index && cursorPosition < (match.Index + match.Length);
+            });
+
+            if (currentLineIndex < 0)
+            {
+                return;
+            }
+
+            var currentLineStackPanel = this.LineNumbersBox.Children[currentLineIndex] as StackPanel;
+            var currentLineTextBlock = currentLineStackPanel.Children.FirstOrDefault() as TextBlock;
+
+            currentLineTextBlock.Foreground = new SolidColorBrush(Colors.White);
+        }
+
+        private int GetPreviousLineNumber()
+        {
+            var lastStackPanel = this.LineNumbersBox.Children.LastOrDefault() as StackPanel;
+            var lineNumberTextBlock = lastStackPanel?.Children.FirstOrDefault() as TextBlock;
+            return int.Parse(lineNumberTextBlock?.Text ?? "0");
+        }
+
+        private StackPanel CreateLineNumberElement(int lineNumber, double yPos)
+        {
+            var stackPanel = new StackPanel()
+            {
+                Width = 60,
+            };
+
+            var textBlock = new TextBlock()
+            {
+                Text = $"{lineNumber}",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = new SolidColorBrush(Colors.Gray),
+                FontSize = this.CodeFontSize
+            };
+
+            stackPanel.Children.Add(textBlock);
+
+            Canvas.SetTop(stackPanel, yPos);
+            Canvas.SetLeft(stackPanel, 0);
+
+            return stackPanel;
+        }
+
+        private void RichEditBox_TextChanging(RichEditBox sender, RichEditBoxTextChangingEventArgs args)
         {
             this.RichEditBox.Document.GetText(TextGetOptions.None, out var text);
 
@@ -111,11 +255,30 @@ namespace ZSharpIDE.Controls
         private void UpdateCodeFileSyntaxHighlighting(string text)
         {
             var numberRegex = @"[-+]?\d*\.?\d+";
-            var reservedWordRegex = $"\\b({string.Join("|", Constants.ReservedWords)})\\b";
-            var directiveRegex = @"#[^\n\r]+?(?:\*\)|[\n\r])";
-            var commentRegex = @"\/\/[^\n\r]+?(?:\*\)|[\n\r])";
+
+            var reservedKeywords = Constants.ReservedKeywords
+                .Select(keyword => keyword.ToString())
+                .ToArray();
+
+            var contextualKeywords = Constants.ContextualKeywords
+                .Select(keyword => keyword.ToString())
+                .ToArray();
+
+            var specialKeywords = Constants.SpecialKeywords
+                .Select(keyword => keyword.ToString())
+                .ToArray();
+
+            var keywords = reservedKeywords
+                .Concat(contextualKeywords)
+                .Concat(specialKeywords)
+                .ToArray();
+
+            var keywordsRegex = $"\\b({string.Join("|", keywords)})\\b";
+
             var stringRegex = @"""([^""\\]*(\\.[^""\\]*)*)""";
             var charRegex = @"'([^'\\]*(\\.[^'\\]*)*)'";
+            var directiveRegex = @"#[^\n\r]+?(?:\*\)|[\n\r])";
+            var commentRegex = @"\/\/[^\n\r]+?(?:\*\)|[\n\r])";
 
             this.SetMatchedBraceColours(text);
 
@@ -127,28 +290,12 @@ namespace ZSharpIDE.Controls
                 range.CharacterFormat.ForegroundColor = Colors.PaleGreen;
             }
 
-            var reservedWordsMatches = Regex.Matches(text, reservedWordRegex).ToList();
-            foreach (var match in reservedWordsMatches)
+            var keywordsMatches = Regex.Matches(text, keywordsRegex).ToList();
+            foreach (var match in keywordsMatches)
             {
                 var range = this.RichEditBox.Document.GetRange(match.Index, match.Index + match.Length);
 
                 range.CharacterFormat.ForegroundColor = Colors.DeepSkyBlue;
-            }
-
-            var directiveMatches = Regex.Matches(text, directiveRegex).ToList();
-            foreach (var match in directiveMatches)
-            {
-                var range = this.RichEditBox.Document.GetRange(match.Index, match.Index + match.Length);
-
-                range.CharacterFormat.ForegroundColor = Colors.Gray;
-            }
-
-            var commentMatches = Regex.Matches(text, commentRegex).ToList();
-            foreach (var match in commentMatches)
-            {
-                var range = this.RichEditBox.Document.GetRange(match.Index, match.Index + match.Length);
-
-                range.CharacterFormat.ForegroundColor = Colors.LimeGreen;
             }
 
             var stringMatches = Regex.Matches(text, stringRegex).ToList();
@@ -165,6 +312,22 @@ namespace ZSharpIDE.Controls
                 var range = this.RichEditBox.Document.GetRange(match.Index, match.Index + match.Length);
 
                 range.CharacterFormat.ForegroundColor = Colors.Gold;
+            }
+
+            var directiveMatches = Regex.Matches(text, directiveRegex).ToList();
+            foreach (var match in directiveMatches)
+            {
+                var range = this.RichEditBox.Document.GetRange(match.Index, match.Index + match.Length);
+
+                range.CharacterFormat.ForegroundColor = Colors.Gray;
+            }
+
+            var commentMatches = Regex.Matches(text, commentRegex).ToList();
+            foreach (var match in commentMatches)
+            {
+                var range = this.RichEditBox.Document.GetRange(match.Index, match.Index + match.Length);
+
+                range.CharacterFormat.ForegroundColor = Colors.LimeGreen;
             }
         }
 

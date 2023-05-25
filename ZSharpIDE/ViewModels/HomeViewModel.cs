@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -122,7 +123,7 @@ namespace ZSharpIDE.ViewModels
             {
                 var csharpfileInfo = new FileInfo(file.Path);
 
-                var zsharpFileInfo = this.ConvertCSharpProject(csharpfileInfo);
+                var zsharpFileInfo = await this.ConvertCSharpProject(csharpfileInfo);
 
                 if (zsharpFileInfo is null)
                 {
@@ -145,7 +146,7 @@ namespace ZSharpIDE.ViewModels
             }
         }
 
-        public FileInfo ConvertCSharpProject(FileInfo fileInfo)
+        public async Task<FileInfo> ConvertCSharpProject(FileInfo fileInfo)
         {
             string[] csFiles = Directory.GetFiles(fileInfo.Directory.FullName, "*.cs", SearchOption.AllDirectories);
             string[] csprojFiles = Directory.GetFiles(fileInfo.Directory.FullName, "*.csproj", SearchOption.AllDirectories);
@@ -153,12 +154,35 @@ namespace ZSharpIDE.ViewModels
             foreach (var csFile in csFiles)
             {
                 var newFilePath = Path.ChangeExtension(csFile, ".zs");
+
                 File.Move(csFile, newFilePath);
+
+                // Update keywords in the file
+                var keywords = Constants.ReservedKeywords
+                    .Concat(Constants.ContextualKeywords)
+                    .Concat(Constants.SpecialKeywords)
+                    .Where(keyword => !string.IsNullOrEmpty(keyword.ZSharpKeyword))
+                    .ToArray();
+
+                var fileText = await File.ReadAllTextAsync(newFilePath);
+
+                var parsed = Regex.Replace(fileText, @"\b\w+\b", match =>
+                {
+                    var currentWord = match.Value;
+
+                    var matchedKeyword = keywords
+                        .FirstOrDefault(keyword => keyword.CSharpKeyword == currentWord);
+
+                    return matchedKeyword?.ZSharpKeyword ?? currentWord;
+                });
+
+                await File.WriteAllTextAsync(newFilePath, parsed);
             }
 
             foreach (var csprojFile in csprojFiles)
             {
                 var newFilePath = Path.ChangeExtension(csprojFile, ".zsproj");
+
                 File.Move(csprojFile, newFilePath);
             }
 

@@ -372,7 +372,29 @@ namespace ZSharpIDE.ViewModels
             foreach (var zsFile in zsFiles)
             {
                 var newFilePath = Path.ChangeExtension(zsFile, ".cs");
+
                 File.Move(zsFile, newFilePath);
+
+                // Update keywords in the file
+                var keywords = Constants.ReservedKeywords
+                    .Concat(Constants.ContextualKeywords)
+                    .Concat(Constants.SpecialKeywords)
+                    .Where(keyword => !string.IsNullOrEmpty(keyword.ZSharpKeyword))
+                    .ToArray();
+
+                var fileText = await File.ReadAllTextAsync(newFilePath);
+
+                var parsed = Regex.Replace(fileText, @"\b\w+\b", match =>
+                {
+                    var currentWord = match.Value;
+
+                    var matchedKeyword = keywords
+                        .FirstOrDefault(keyword => keyword.ZSharpKeyword == currentWord);
+
+                    return matchedKeyword?.CSharpKeyword ?? currentWord;
+                });
+
+                await File.WriteAllTextAsync(newFilePath, parsed);
             }
 
             foreach (var zsprojFile in zsprojFiles)
